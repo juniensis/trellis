@@ -6,7 +6,9 @@ use std::{
 use crossterm::{
     cursor::MoveTo,
     execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen, window_size},
+    terminal::{
+        EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, window_size,
+    },
 };
 
 use crate::cell::Cell;
@@ -24,6 +26,7 @@ impl Viewport {
         let sz = window_size().unwrap();
         let mut out = stdout();
         execute!(out, EnterAlternateScreen).unwrap();
+        enable_raw_mode();
         Self {
             out,
             width: sz.columns,
@@ -75,6 +78,7 @@ impl Viewport {
     }
     pub fn leave(&mut self) {
         execute!(self.out, LeaveAlternateScreen).unwrap();
+        disable_raw_mode();
     }
 }
 

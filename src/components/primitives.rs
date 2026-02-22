@@ -3,6 +3,7 @@ use std::fmt::Display;
 use crossterm::style::Colors;
 
 use crate::{
+    Event,
     cell::{Cell, Nuclei},
     components::Component,
 };
@@ -136,12 +137,17 @@ impl Rectangle {
 }
 
 impl Component for Rectangle {
-    fn update(&mut self, _event: crate::Event) {}
+    fn update(&mut self, _event: crate::Event) -> Option<Event> {
+        None
+    }
     fn draw(&self, viewport: &mut crate::viewport::Viewport) {
         viewport.write_cells(&self.render_cells());
     }
     fn erase(&self, viewport: &mut crate::viewport::Viewport) {
         viewport.clear_cells(&self.render_cells());
+    }
+    fn is_inside(&self, x: u16, y: u16) -> bool {
+        (self.x..=self.x + self.width).contains(&x) && (self.y..=self.y + self.height).contains(&y)
     }
 }
 
