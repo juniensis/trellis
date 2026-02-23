@@ -3,5 +3,10 @@ name = "trellis"
 version = "0.1.0"
 edition = "2024"
 
+[workspace]
+resolver = "2"
+members = ["crates/trellis-terminal", "crates/trellis-ui"]
+
 [dependencies]
-crossterm = "0.29.0"
+trellis-terminal = { path = "crates/trellis-terminal" }
+trellis-ui = { path = "crates/trellis-ui" }

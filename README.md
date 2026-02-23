@@ -1,1 +1,3 @@
-# Terminal Mind-Maps
+# Trellis
+
+A chalkboard in your terminal.
