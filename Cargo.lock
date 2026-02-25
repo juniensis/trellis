@@ -277,6 +277,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "trellis-primitives"
+version = "0.1.0"
+
+[[package]]
 name = "trellis-terminal"
 version = "0.1.0"
 dependencies = [
