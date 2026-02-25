@@ -1,7 +1,8 @@
-use std::fmt::Display;
+use std::fmt;
 
-use crate::cell::Cell;
+use crate::terminal::Cell;
 
+/// Top-left is (0, 0), bottom right is ('width', 'height').
 #[derive(Debug, Clone)]
 pub struct Buffer {
     width: usize,
@@ -45,7 +46,7 @@ impl Buffer {
         &mut self.inner[y * self.width + x]
     }
     #[inline]
-    pub fn write_cell(&mut self, x: usize, y: usize, cell: Cell) {
+    pub fn set_cell(&mut self, x: usize, y: usize, cell: Cell) {
         if let Some(c) = self.get_mut(x, y) {
             *c = cell;
         }
@@ -85,8 +86,8 @@ impl Buffer {
     }
 }
 
-impl Display for Buffer {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Buffer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for line in self.inner.chunks(self.width) {
             for cell in line {
                 write!(f, "{cell}")?;

@@ -1,7 +1,8 @@
 use crate::{
     error::TerminalResult,
-    event::{EventSender, KeyCode, TerminalEvent},
+    event::{KeyCode, TerminalEvent},
 };
+
 use crossterm::{
     cursor::{self, Hide, MoveTo, Show},
     execute, queue,
@@ -9,10 +10,13 @@ use crossterm::{
         EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode, window_size,
     },
 };
+
 use std::{
     io::{self, BufWriter, Stdout, Write},
     thread,
 };
+
+use trellis_primitives::singlethreaded::queue::EventSender;
 
 pub mod error;
 pub mod event;
@@ -109,9 +113,10 @@ fn read_events(sender: EventSender<TerminalEvent>) {
 
 #[cfg(test)]
 mod tests {
-    use crate::event::EventQueue;
+    use trellis_primitives::singlethreaded::queue::EventQueue;
 
     use super::*;
+
     #[test]
     fn read_events() {
         let queue = EventQueue::new();
@@ -120,6 +125,9 @@ mod tests {
 
         loop {
             let e = queue.recv();
+            if let TerminalEvent::Quit = e {
+                break;
+            }
             println!("{e:?}");
         }
     }

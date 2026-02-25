@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::Style;
+use trellis_primitives::terminal::Style;
 
 /// General events relevant to the UI. Primitive widgets accept these as a
 /// message.

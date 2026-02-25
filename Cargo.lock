@@ -285,11 +285,15 @@ name = "trellis-terminal"
 version = "0.1.0"
 dependencies = [
  "crossterm",
+ "trellis-primitives",
 ]
 
 [[package]]
 name = "trellis-ui"
 version = "0.1.0"
+dependencies = [
+ "trellis-primitives",
+]
 
 [[package]]
 name = "unicode-ident"

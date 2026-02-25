@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::term::style::{Color, Modes, Stylable, Style};
+use crate::terminal::style::{Color, Modes, Stylable, Style};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Cell {

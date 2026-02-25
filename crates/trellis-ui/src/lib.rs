@@ -1,12 +1,7 @@
 //! UI primitives.
-pub mod buffer;
-pub mod cell;
+pub mod elements;
 pub mod error;
 pub mod event;
-pub(crate) mod rand;
-pub mod style;
+pub mod primitives;
+pub mod render;
 pub mod widgets;
-
-pub use buffer::Buffer;
-pub use cell::Cell;
-pub use style::*;
