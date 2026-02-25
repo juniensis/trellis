@@ -1,20 +1,25 @@
-use std::rc::Rc;
+use std::hash::Hash;
 
-use crate::{buffer::Buffer, cell::Cell, style::Style};
+use crate::{buffer::Buffer, cell::Cell, event::UiEvent, rand::rand_u128, style::Style};
+
+#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
+pub struct WidgetId(u128);
+impl Default for WidgetId {
+    fn default() -> Self {
+        Self(rand_u128())
+    }
+}
 
 pub trait Widget<Message> {
     fn collides(&self, x: usize, y: usize) -> bool;
     fn update(&mut self, message: Message) -> Option<Message>;
     fn draw(&self, buffer: &mut Buffer);
+    fn identify(&self) -> WidgetId;
 }
 
-pub trait PrimitiveWidget {
-    fn draw(&self, buffer: &mut Buffer);
-}
-
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Hash)]
 pub struct Label {
-    label: Rc<str>,
+    id: WidgetId,
     text: String,
     position: (usize, usize),
     style: Style,
@@ -76,13 +81,42 @@ impl Label {
     pub fn get_text_mut(&mut self) -> &mut String {
         &mut self.text
     }
-    #[inline]
-    pub fn label(&self) -> &str {
-        self.label.as_ref()
+    pub fn width(&self) -> usize {
+        self.text.lines().map(|x| x.len()).max().unwrap_or(0)
+    }
+    pub fn height(&self) -> usize {
+        self.text.lines().count()
+    }
+    pub fn x(&self) -> usize {
+        self.position.0
+    }
+    pub fn y(&self) -> usize {
+        self.position.1
     }
 }
 
-impl PrimitiveWidget for Label {
+impl Widget<UiEvent> for Label {
+    fn collides(&self, x: usize, y: usize) -> bool {
+        (self.x()..self.x() + self.width()).contains(&x)
+            && (self.y()..self.y() + self.height()).contains(&y)
+    }
+    fn update(&mut self, message: UiEvent) -> Option<UiEvent> {
+        match message {
+            UiEvent::MoveTo(x, y) => {
+                self.position = (x, y);
+            }
+            UiEvent::MoveBy(dx, dy) => {
+                self.position = (
+                    self.position.0.saturating_add_signed(dx),
+                    self.position.1.saturating_add_signed(dy),
+                );
+            }
+            UiEvent::String(txt) => self.text = txt,
+            UiEvent::SetStyle(sty) => self.set_style(sty),
+            _ => {}
+        }
+        None
+    }
     fn draw(&self, buffer: &mut Buffer) {
         let (mut x, mut y) = self.position;
         for cell in self
@@ -98,5 +132,8 @@ impl PrimitiveWidget for Label {
                 x += 1;
             }
         }
+    }
+    fn identify(&self) -> WidgetId {
+        self.id
     }
 }

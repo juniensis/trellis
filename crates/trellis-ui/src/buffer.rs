@@ -1,11 +1,8 @@
 use std::fmt::Display;
 
-use crate::{
-    cell::Cell,
-    error::{UiError, UiResult},
-};
+use crate::cell::Cell;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Buffer {
     width: usize,
     height: usize,
@@ -66,19 +63,25 @@ impl Buffer {
         self.dimensions().1
     }
     #[inline]
-    pub fn write_difference(&mut self, other: &Buffer) -> UiResult<()> {
-        if self.dimensions() != other.dimensions() {
-            return Err(UiError::BufferDimensionMismatch(
-                self.dimensions(),
-                other.dimensions(),
-            ));
-        }
-        for (target, source) in self.inner.iter_mut().zip(other.inner.iter()) {
-            if target != source {
-                *target = *source;
-            }
-        }
-        Ok(())
+    pub fn iter(&self) -> impl Iterator<Item = &Cell> {
+        self.inner.iter()
+    }
+    #[inline]
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut Cell> {
+        self.inner.iter_mut()
+    }
+    #[inline]
+    pub fn positioned_iter(&self) -> impl Iterator<Item = ((usize, usize), &Cell)> {
+        self.iter()
+            .enumerate()
+            .map(|(idx, cell)| ((idx % self.width, idx / self.width), cell))
+    }
+    #[inline]
+    pub fn positioned_iter_mut(&mut self) -> impl Iterator<Item = ((usize, usize), &mut Cell)> {
+        let width = self.width;
+        self.iter_mut()
+            .enumerate()
+            .map(move |(idx, cell)| ((idx % width, idx / width), cell))
     }
 }
 

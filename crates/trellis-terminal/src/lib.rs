@@ -1,6 +1,6 @@
 use crate::{
     error::TerminalResult,
-    event::{Event, EventSender, KeyCode},
+    event::{EventSender, KeyCode, TerminalEvent},
 };
 use crossterm::{
     cursor::{self, Hide, MoveTo, Show},
@@ -11,8 +11,7 @@ use crossterm::{
 };
 use std::{
     io::{self, BufWriter, Stdout, Write},
-    thread::{self, sleep},
-    time::Duration,
+    thread,
 };
 
 pub mod error;
@@ -31,7 +30,7 @@ impl Terminal {
         execute!(term.writer, EnterAlternateScreen, Hide)?;
         Ok(term)
     }
-    pub fn link(&self, sender: EventSender) {
+    pub fn link(&self, sender: EventSender<TerminalEvent>) {
         thread::spawn(|| read_events(sender));
     }
     pub fn size(&self) -> TerminalResult<(usize, usize)> {
@@ -88,18 +87,18 @@ impl Drop for Terminal {
     }
 }
 
-fn read_events(sender: EventSender) {
+fn read_events(sender: EventSender<TerminalEvent>) {
     loop {
         if let Some(e) = crossterm::event::read()
             .ok()
-            .and_then(Event::from_crossterm_event)
+            .and_then(TerminalEvent::from_crossterm_event)
         {
             match e {
-                Event::Key {
+                TerminalEvent::Key {
                     code: KeyCode::Char('c'),
                     modifiers,
                 } if modifiers.is_ctrl() => {
-                    sender.send(Event::Quit);
+                    sender.send(TerminalEvent::Quit);
                     return;
                 }
                 other => sender.send(other),

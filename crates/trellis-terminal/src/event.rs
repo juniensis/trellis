@@ -11,7 +11,13 @@ use crossterm::event::{KeyEvent, KeyModifiers};
 pub enum KeyCode {
     Char(char),
     Enter,
+    Backspace,
+    Tab,
     Escape,
+    Left,
+    Right,
+    Up,
+    Down,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Default)]
@@ -24,8 +30,6 @@ impl Modifiers {
     pub const ALT: u8 = 0b0000_0010;
     pub const CTRL: u8 = 0b0000_0100;
     pub const SHIFT: u8 = 0b0000_1000;
-    pub const LEFT: u8 = 0b1000_0000;
-    pub const RIGHT: u8 = 0b0100_0000;
     #[inline]
     pub fn new() -> Self {
         Self::default()
@@ -51,16 +55,6 @@ impl Modifiers {
         self
     }
     #[inline]
-    pub fn left(mut self) -> Self {
-        self.0 |= Self::LEFT;
-        self
-    }
-    #[inline]
-    pub fn right(mut self) -> Self {
-        self.0 |= Self::RIGHT;
-        self
-    }
-    #[inline]
     pub fn is_alt(&self) -> bool {
         self.0 & Self::ALT != 0
     }
@@ -77,12 +71,41 @@ impl Modifiers {
         self.0 & Self::SHIFT != 0
     }
     #[inline]
-    pub fn is_left(&self) -> bool {
-        self.0 & Self::LEFT != 0
+    pub fn iter(&self) -> impl Iterator<Item = Modifier> {
+        (0..4).filter_map(|x| {
+            if self.0 & (1 << x) != 0 {
+                Some(match x {
+                    0 => Modifier::Super,
+                    1 => Modifier::Alt,
+                    2 => Modifier::Ctrl,
+                    3 => Modifier::Shift,
+                    _ => unreachable!(),
+                })
+            } else {
+                None
+            }
+        })
     }
-    #[inline]
-    pub fn is_right(&self) -> bool {
-        self.0 & Self::RIGHT != 0
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Modifier {
+    None,
+    Shift,
+    Ctrl,
+    Alt,
+    Super,
+}
+
+impl fmt::Display for Modifier {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::None => write!(f, "NONE"),
+            Self::Shift => write!(f, "SHIFT"),
+            Self::Ctrl => write!(f, "CTRL"),
+            Self::Alt => write!(f, "ALT"),
+            Self::Super => write!(f, "SUPER"),
+        }
     }
 }
 
@@ -108,24 +131,18 @@ impl fmt::Display for Modifiers {
             strs.push("SHIFT")
         }
 
-        if self.is_right() {
-            write!(f, "RIGHT: ")?;
-        } else if self.is_left() {
-            write!(f, "LEFT: ")?;
-        }
-
         write!(f, "{}", strs.join("+"))
     }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Event {
+pub enum TerminalEvent {
     Key { code: KeyCode, modifiers: Modifiers },
     Resized(usize, usize),
     Quit,
 }
 
-impl Event {
+impl TerminalEvent {
     pub fn from_crossterm_event(e: crossterm::event::Event) -> Option<Self> {
         match e {
             crossterm::event::Event::Key(KeyEvent {
@@ -137,6 +154,12 @@ impl Event {
                 let kc = match code {
                     crossterm::event::KeyCode::Esc => KeyCode::Escape,
                     crossterm::event::KeyCode::Enter => KeyCode::Enter,
+                    crossterm::event::KeyCode::Backspace => KeyCode::Enter,
+                    crossterm::event::KeyCode::Tab => KeyCode::Tab,
+                    crossterm::event::KeyCode::Left => KeyCode::Left,
+                    crossterm::event::KeyCode::Right => KeyCode::Right,
+                    crossterm::event::KeyCode::Up => KeyCode::Up,
+                    crossterm::event::KeyCode::Down => KeyCode::Down,
                     crossterm::event::KeyCode::Char(ch) => KeyCode::Char(ch),
                     _ => return None,
                 };
@@ -150,35 +173,37 @@ impl Event {
                     }
                 }
 
-                Some(Event::Key {
+                Some(TerminalEvent::Key {
                     code: kc,
                     modifiers: mods,
                 })
             }
-            crossterm::event::Event::Resize(x, y) => Some(Event::Resized(x as usize, y as usize)),
+            crossterm::event::Event::Resize(x, y) => {
+                Some(TerminalEvent::Resized(x as usize, y as usize))
+            }
             _ => None,
         }
     }
 }
 
 #[derive(Debug)]
-pub(crate) struct EventQueueInner {
-    queue: Mutex<VecDeque<Event>>,
+pub(crate) struct EventQueueInner<T> {
+    queue: Mutex<VecDeque<T>>,
     condvar: Condvar,
 }
 
-pub struct EventSender {
-    inner: Arc<EventQueueInner>,
+pub struct EventSender<T> {
+    inner: Arc<EventQueueInner<T>>,
 }
 
-impl EventSender {
-    pub fn send(&self, e: Event) {
+impl<T> EventSender<T> {
+    pub fn send(&self, e: T) {
         self.inner.queue.lock().unwrap().push_back(e);
         self.inner.condvar.notify_one();
     }
 }
 
-impl Clone for EventSender {
+impl<T: Clone> Clone for EventSender<T> {
     fn clone(&self) -> Self {
         Self {
             inner: self.inner.clone(),
@@ -186,42 +211,19 @@ impl Clone for EventSender {
     }
 }
 
-pub struct EventQueue {
-    inner: Arc<EventQueueInner>,
+pub struct EventReceiver<T> {
+    inner: Arc<EventQueueInner<T>>,
 }
 
-impl EventQueueInner {
-    pub fn new() -> Self {
-        Self {
-            queue: Mutex::new(VecDeque::new()),
-            condvar: Condvar::new(),
-        }
-    }
-}
-
-impl EventQueue {
-    pub fn new() -> Self {
-        Self {
-            inner: Arc::new(EventQueueInner::new()),
-        }
-    }
-    pub fn sender(&self) -> EventSender {
-        EventSender {
-            inner: self.inner.clone(),
-        }
-    }
-    pub fn push(&self, e: Event) {
-        self.inner.queue.lock().unwrap().push_back(e);
-        self.inner.condvar.notify_one();
-    }
-    pub fn try_recv(&self) -> Option<Event> {
+impl<T> EventReceiver<T> {
+    pub fn try_recv(&self) -> Option<T> {
         self.inner
             .queue
             .lock()
             .expect("EventQueue::try_recv() lock failed.")
             .pop_front()
     }
-    pub fn recv(&self) -> Event {
+    pub fn recv(&self) -> T {
         let mut queue = self
             .inner
             .queue
@@ -238,7 +240,7 @@ impl EventQueue {
                 .expect("EventQueue::recv() condvar wait failed.");
         }
     }
-    pub fn recv_timeout(&self, timeout: Duration) -> Option<Event> {
+    pub fn recv_timeout(&self, timeout: Duration) -> Option<T> {
         let mut queue = self
             .inner
             .queue
@@ -261,7 +263,95 @@ impl EventQueue {
     }
 }
 
-impl Default for EventQueue {
+impl<T> Clone for EventReceiver<T> {
+    fn clone(&self) -> Self {
+        Self {
+            inner: self.inner.clone(),
+        }
+    }
+}
+
+pub struct EventQueue<T> {
+    inner: Arc<EventQueueInner<T>>,
+}
+
+impl<T> EventQueueInner<T> {
+    pub fn new() -> Self {
+        Self {
+            queue: Mutex::new(VecDeque::new()),
+            condvar: Condvar::new(),
+        }
+    }
+}
+
+impl<T> EventQueue<T> {
+    pub fn new() -> Self {
+        Self {
+            inner: Arc::new(EventQueueInner::new()),
+        }
+    }
+    pub fn sender(&self) -> EventSender<T> {
+        EventSender {
+            inner: self.inner.clone(),
+        }
+    }
+    pub fn receiver(&self) -> EventReceiver<T> {
+        EventReceiver {
+            inner: self.inner.clone(),
+        }
+    }
+    pub fn push(&self, e: T) {
+        self.inner.queue.lock().unwrap().push_back(e);
+        self.inner.condvar.notify_one();
+    }
+    pub fn try_recv(&self) -> Option<T> {
+        self.inner
+            .queue
+            .lock()
+            .expect("EventQueue::try_recv() lock failed.")
+            .pop_front()
+    }
+    pub fn recv(&self) -> T {
+        let mut queue = self
+            .inner
+            .queue
+            .lock()
+            .expect("EventQueue::recv() lock failed.");
+        loop {
+            if let Some(val) = queue.pop_front() {
+                return val;
+            }
+            queue = self
+                .inner
+                .condvar
+                .wait(queue)
+                .expect("EventQueue::recv() condvar wait failed.");
+        }
+    }
+    pub fn recv_timeout(&self, timeout: Duration) -> Option<T> {
+        let mut queue = self
+            .inner
+            .queue
+            .lock()
+            .expect("EventQueue::recv() lock failed.");
+        loop {
+            if let Some(val) = queue.pop_front() {
+                return Some(val);
+            }
+            let (q, timed_out) = self
+                .inner
+                .condvar
+                .wait_timeout(queue, timeout)
+                .expect("EventQueue::recv_timeout() condvar wait_timeout failed.");
+            queue = q;
+            if timed_out.timed_out() {
+                return queue.pop_front();
+            }
+        }
+    }
+}
+
+impl<T: Default> Default for EventQueue<T> {
     fn default() -> Self {
         Self::new()
     }

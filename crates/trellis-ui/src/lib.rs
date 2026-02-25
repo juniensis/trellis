@@ -2,6 +2,8 @@
 pub mod buffer;
 pub mod cell;
 pub mod error;
+pub mod event;
+pub(crate) mod rand;
 pub mod style;
 pub mod widgets;
 
