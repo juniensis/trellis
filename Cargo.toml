@@ -6,11 +6,11 @@ edition = "2024"
 [workspace]
 resolver = "2"
 members = [
-  "crates/trellis-primitives",
-  "crates/trellis-terminal",
-  "crates/trellis-ui",
+  "crates/trellis_core",
+  "crates/trellis_terminal",
+  "crates/trellis_ui",
 ]
 
 [dependencies]
-trellis-terminal = { path = "crates/trellis-terminal" }
-trellis-ui = { path = "crates/trellis-ui" }
+trellis_terminal = { path = "crates/trellis_terminal" }
+trellis_ui = { path = "crates/trellis_ui" }

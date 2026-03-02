@@ -272,27 +272,27 @@ dependencies = [
 name = "trellis"
 version = "0.1.0"
 dependencies = [
- "trellis-terminal",
- "trellis-ui",
+ "trellis_terminal",
+ "trellis_ui",
 ]
 
 [[package]]
-name = "trellis-primitives"
+name = "trellis_core"
 version = "0.1.0"
 
 [[package]]
-name = "trellis-terminal"
+name = "trellis_terminal"
 version = "0.1.0"
 dependencies = [
  "crossterm",
- "trellis-primitives",
+ "trellis_core",
 ]
 
 [[package]]
-name = "trellis-ui"
+name = "trellis_ui"
 version = "0.1.0"
 dependencies = [
- "trellis-primitives",
+ "trellis_core",
 ]
 
 [[package]]
