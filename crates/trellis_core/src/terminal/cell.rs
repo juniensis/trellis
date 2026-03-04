@@ -67,6 +67,10 @@ impl Cell {
     pub fn style(&self) -> Style {
         self.style
     }
+    #[inline]
+    pub fn null() -> Self {
+        Self::new('\0')
+    }
 }
 
 impl fmt::Display for Cell {
