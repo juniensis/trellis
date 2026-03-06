@@ -62,7 +62,26 @@ pub enum CircleBorder {
     Char(Cell),
 }
 
+#[derive(Default)]
 pub struct CircleStyle {
     pub fill: Option<Cell>,
     pub border: Option<CircleBorder>,
+}
+
+impl CircleStyle {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn with_border(mut self, border: CircleBorder) -> Self {
+        self.border = Some(border);
+        self
+    }
+    pub fn with_fill(mut self, cell: Cell) -> Self {
+        self.fill = Some(cell);
+        self
+    }
+    pub fn with_char_fill(mut self, ch: char) -> Self {
+        self.fill = Some(Cell::new(ch));
+        self
+    }
 }

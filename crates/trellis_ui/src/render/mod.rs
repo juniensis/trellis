@@ -4,12 +4,16 @@ pub mod primitives;
 pub mod region;
 pub mod styles;
 
-pub trait Renderer {
-    fn begin_layer(&self, initial_width: u16, initial_height: u16) -> Region;
-    fn commit_layer(&mut self, x_offset: u16, y_offset: u16);
+pub trait Renderable {
+    fn render(&self) -> Region;
+}
 
-    /*
-    pub fn draw_primitive(&self, mut region: Region, primitive: Primitive) -> Region {
-        primitive
-    }*/
+pub trait Renderer {
+    fn composite(&mut self, x: u16, y: u16, region: Region);
+    fn flush(&mut self);
+
+    fn draw<R: Renderable>(&mut self, x: u16, y: u16, renderable: R) {
+        let region = renderable.render();
+        self.composite(x, y, region);
+    }
 }

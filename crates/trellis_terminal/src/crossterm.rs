@@ -1,4 +1,4 @@
-use std::io::{BufWriter, Stdout, Write};
+use std::io::{BufWriter, Stdout, Write, stdout};
 
 use crossterm::{
     event::{KeyEvent, KeyModifiers},
@@ -13,6 +13,20 @@ use crate::{
 
 pub struct Terminal {
     buffer: BufWriter<Stdout>,
+}
+
+impl Terminal {
+    pub fn new() -> Self {
+        Self {
+            buffer: BufWriter::new(stdout()),
+        }
+    }
+}
+
+impl Default for Terminal {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Backend for Terminal {

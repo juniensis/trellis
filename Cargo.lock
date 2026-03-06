@@ -272,6 +272,7 @@ dependencies = [
 name = "trellis"
 version = "0.1.0"
 dependencies = [
+ "trellis_core",
  "trellis_terminal",
  "trellis_ui",
 ]

@@ -20,7 +20,15 @@ impl Region {
         }
     }
     #[inline]
-    pub fn new(width: u16, height: u16) -> Self {
+    pub fn new() -> Self {
+        Self {
+            cells: vec![vec![Cell::null(); 4]; 4],
+            width: 4,
+            height: 4,
+        }
+    }
+    #[inline]
+    pub fn with_capacity(width: u16, height: u16) -> Self {
         Self {
             cells: vec![vec![Cell::null(); width as usize]; height as usize],
             width,
@@ -49,6 +57,9 @@ impl Region {
             .get(y as usize)
             .and_then(|inner| inner.get(x as usize))
     }
+    pub fn size(&self) -> (u16, u16) {
+        (self.width, self.height)
+    }
 }
 
 impl Display for Region {
@@ -64,5 +75,11 @@ impl Display for Region {
             writeln!(f)?;
         }
         Ok(())
+    }
+}
+
+impl Default for Region {
+    fn default() -> Self {
+        Self::new()
     }
 }

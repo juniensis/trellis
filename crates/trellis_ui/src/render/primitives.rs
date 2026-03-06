@@ -93,33 +93,76 @@ impl Circle {
         self.radius = self.radius.saturating_add_signed(dr)
     }
     pub fn render(&self, mut region: Region) -> Region {
-        todo!()
+        let (cx, cy) = (self.radius as i32, self.radius as i32);
+        let mut x = 0;
+        let mut y = self.radius as i32;
+        let mut d = 1 - (self.radius as i32);
+
+        let aspect: f32 = 0.5;
+
+        let mut points = Vec::new();
+
+        while x <= y {
+            let ay = (y as f32 * aspect).round() as i32;
+            let ax = (x as f32 * aspect).round() as i32;
+
+            points.extend_from_slice(
+                [
+                    (cx + x, cy + ay),
+                    (cx + y, cy + ax),
+                    (cx - x, cy + ay),
+                    (cx - y, cy + ax),
+                    (cx + x, cy - ay),
+                    (cx + y, cy - ax),
+                    (cx - x, cy - ay),
+                    (cx - y, cy - ax),
+                ]
+                .as_slice(),
+            );
+
+            if d < 0 {
+                d += 2 * x + 3;
+            } else {
+                d += 2 * (x - y) + 5;
+                y -= 1;
+            }
+
+            x += 1;
+        }
+
+        for (px, py) in points {
+            region.set_cell(px.max(0) as u16, py.max(0) as u16, Cell::new('*'));
+        }
+
+        region
     }
 }
 
+//
+// *
+//    x
+//
+// end: (-2, 1)
+//
+// Region:
+// *-----
+// |  x
+// |
+//
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Line {
-    pub len: f32,
-    pub angle: f32,
+    pub end: (i32, i32),
 }
 
 impl Line {
-    pub fn new(len: f32, angle: f32) -> Self {
-        Self { len, angle }
+    pub fn new(end: (i32, i32)) -> Self {
+        Self { end }
     }
-    pub fn resize(&mut self, len: f32) {
-        self.len = len;
-    }
-    pub fn resize_by(&mut self, len: f32) {
-        self.len += len;
-    }
-    pub fn rotate_to(&mut self, angle: f32) {
-        self.angle = angle;
-    }
-    pub fn rotate_by(&mut self, da: f32) {
-        self.angle += da;
+    pub fn resize(&mut self, new_end: (i32, i32)) {
+        self.end = new_end;
     }
     pub fn render(&self, mut region: Region) -> Region {
+        let max_x = self.end.0.max(0);
         todo!()
     }
 }
@@ -207,12 +250,19 @@ mod tests {
 
     #[test]
     fn rectangle_t() {
-        let region = Region::new(10, 20);
+        let region = Region::with_capacity(10, 20);
         let rect = Rect::new(5, 5)
             .with_fill(Cell::new('x'))
             .with_border(RectangleBorder::Ascii(Style::default()));
 
         let written_to = rect.render(region);
+        println!("{written_to}");
+    }
+    #[test]
+    fn circle_t() {
+        let region = Region::with_capacity(10, 10);
+        let circle = Circle::new(15);
+        let written_to = circle.render(region);
         println!("{written_to}");
     }
 }
