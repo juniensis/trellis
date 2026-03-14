@@ -1,4 +1,4 @@
-use crate::render::region::Region;
+use crate::primitives::Region;
 
 pub trait Element<Message> {
     fn update(&mut self, message: Message) -> Option<Message>;

@@ -1,7 +1,9 @@
 use trellis_core::terminal::{cell::Cell, point::Point};
 
+use crate::primitives::Region;
+
 use crate::render::{
-    region::Region,
+    Renderable,
     styles::{RectangleBorder, RectangleStyle},
 };
 
@@ -74,6 +76,12 @@ impl Rect {
             }
         }
         region
+    }
+}
+
+impl Renderable for Rect {
+    fn render(&self) -> crate::primitives::Primitive {
+        crate::primitives::Primitive::Region(self.render(Region::default()))
     }
 }
 

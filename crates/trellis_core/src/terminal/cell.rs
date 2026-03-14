@@ -71,6 +71,10 @@ impl Cell {
     pub fn null() -> Self {
         Self::new('\0')
     }
+    #[inline]
+    pub fn is_null(&self) -> bool {
+        self.ch == '\0'
+    }
 }
 
 impl fmt::Display for Cell {

@@ -9,7 +9,9 @@ use crate::{
 use trellis_core::collections::Queue;
 
 pub trait Backend {
-    fn read_event() -> Option<Event>;
+    fn read_event() -> Option<Event>
+    where
+        Self: Sized;
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), TerminalError>;
     fn size(&mut self) -> Result<(usize, usize), TerminalError>;
     fn enable_raw_mode(&mut self) -> Result<(), TerminalError>;
@@ -23,9 +25,9 @@ pub trait Backend {
     fn write_str(&mut self, string: &str) -> Result<(), TerminalError> {
         self.write_bytes(string.as_bytes())
     }
-    // TODO: Test; probably wrong.
+
     fn write_char(&mut self, ch: char) -> Result<(), TerminalError> {
-        let mut buf = [0; 8];
+        let mut buf = [0; 4];
         self.write_str(ch.encode_utf8(&mut buf))
     }
 
@@ -33,7 +35,10 @@ pub trait Backend {
     ///
     /// This spawns a thread which polls at 'polling_hz' for new events and
     /// pushes them to the queue as they come in.
-    fn link(&self, dst: Queue<Event>, polling_hz: u16) {
+    fn link(&self, dst: Queue<Event>, polling_hz: u16)
+    where
+        Self: Sized,
+    {
         thread::spawn(move || read_events::<Self>(dst, polling_hz));
     }
 
@@ -84,7 +89,7 @@ pub trait Backend {
     }
 }
 
-fn read_events<B: Backend + ?Sized>(dst: Queue<Event>, polling_hz: u16) {
+fn read_events<B: Backend>(dst: Queue<Event>, polling_hz: u16) {
     let dur = Duration::from_secs_f32(1.0 / polling_hz as f32);
     loop {
         if let Some(event) = B::read_event() {
@@ -96,12 +101,20 @@ fn read_events<B: Backend + ?Sized>(dst: Queue<Event>, polling_hz: u16) {
 
 #[cfg(test)]
 mod tests {
-    use std::io::{BufWriter, Stdout, Write};
+    use std::io::{BufWriter, Stdout, Write, stdout};
 
     use super::*;
 
     struct TestBackend {
         buffer: BufWriter<Stdout>,
+    }
+
+    impl Default for TestBackend {
+        fn default() -> Self {
+            Self {
+                buffer: BufWriter::new(stdout()),
+            }
+        }
     }
 
     impl Backend for TestBackend {

@@ -96,3 +96,11 @@ impl Backend for Terminal {
         Ok(())
     }
 }
+
+impl Drop for Terminal {
+    fn drop(&mut self) {
+        self.disable_raw_mode().unwrap();
+        self.leave_alternate_screen().unwrap();
+        self.flush().unwrap();
+    }
+}

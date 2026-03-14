@@ -53,7 +53,7 @@ impl Buffer {
     }
     #[inline]
     pub fn set_sequence(&mut self, x: usize, y: usize, cells: &[Cell]) {
-        let idx = y + self.width + x;
+        let idx = y * self.width + x;
         if let Some(slice) = self.inner.get_mut(idx..idx + cells.len()) {
             slice.copy_from_slice(cells);
         }

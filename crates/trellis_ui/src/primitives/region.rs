@@ -1,7 +1,11 @@
 use std::fmt::Display;
 
-use trellis_core::terminal::cell::Cell;
+use trellis_core::{
+    primitives::Pos,
+    terminal::{buffer::Buffer, cell::Cell},
+};
 
+/// A dynamically resizing rectangular cell region.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Region {
     cells: Vec<Vec<Cell>>,
@@ -57,8 +61,20 @@ impl Region {
             .get(y as usize)
             .and_then(|inner| inner.get(x as usize))
     }
+    #[inline]
     pub fn size(&self) -> (u16, u16) {
         (self.width, self.height)
+    }
+    #[inline]
+    pub fn composite(&self, pos: impl Into<Pos>, dst: &mut Buffer) {
+        let pos = pos.into();
+        let mut y = pos.y as usize;
+        let len = dst.width() - pos.x as usize;
+        for line in self.cells.iter() {
+            let a = len.min(line.len());
+            dst.set_sequence(pos.x as usize, y, &line[0..a]);
+            y += 1;
+        }
     }
 }
 

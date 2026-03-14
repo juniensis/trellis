@@ -1,3 +1,3 @@
-pub struct Point {
-    x: u16,
-}
+pub mod pos;
+
+pub use pos::Pos;
