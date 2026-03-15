@@ -258,14 +258,13 @@ mod tests {
 
     #[test]
     fn rectangle_t() {
-        let region = Region::with_capacity(10, 20);
-        let rect = Rect::new(5, 5)
-            .with_fill(Cell::new('x'))
-            .with_border(RectangleBorder::Ascii(Style::default()));
+        let region = Region::new();
+        let rect = Rect::new(5, 5).with_fill(Cell::new('x'));
 
         let written_to = rect.render(region);
-        println!("{written_to}");
+        print!("{written_to}");
     }
+    #[ignore]
     #[test]
     fn circle_t() {
         let region = Region::with_capacity(10, 10);

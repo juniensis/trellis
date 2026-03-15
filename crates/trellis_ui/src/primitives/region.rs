@@ -82,11 +82,7 @@ impl Display for Region {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for r in &self.cells {
             for c in r {
-                if c.char() == '\0' {
-                    write!(f, " ")?;
-                } else {
-                    write!(f, "{c}")?;
-                }
+                write!(f, "{c}")?;
             }
             writeln!(f)?;
         }
@@ -97,5 +93,30 @@ impl Display for Region {
 impl Default for Region {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn composite_onto_buffer() {
+        let mut region = Region::new();
+        region.set_cell(1, 1, Cell::new('x'));
+        region.set_cell(2, 1, Cell::new('x'));
+        region.set_cell(3, 1, Cell::new('x'));
+        region.set_cell(4, 1, Cell::new('x'));
+        region.set_cell(1, 2, Cell::new('x'));
+        region.set_cell(2, 2, Cell::new('x'));
+        region.set_cell(3, 2, Cell::new('x'));
+        region.set_cell(4, 2, Cell::new('x'));
+
+        print!("{region}");
+        println!("{}", region.cells.len());
+
+        let mut buffer = Buffer::new(10, 10);
+        region.composite((0, 0), &mut buffer);
+        println!("{buffer}");
     }
 }

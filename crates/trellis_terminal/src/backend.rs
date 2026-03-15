@@ -63,7 +63,7 @@ pub trait Backend {
     }
 
     fn move_cursor(&mut self, x: u16, y: u16) -> Result<(), TerminalError> {
-        self.execute_ansi(EscapeCode::CursorMove(x, y))
+        self.execute_ansi(EscapeCode::CursorMove(x + 1, y + 1))
     }
 
     fn displace_cursor(&mut self, dx: i16, dy: i16) -> Result<(), TerminalError> {

@@ -91,13 +91,30 @@ impl Buffer {
             .enumerate()
             .map(move |(idx, cell)| ((idx % width, idx / width), cell))
     }
+    #[inline]
+    pub fn string(&self) -> String {
+        self.inner
+            .chunks(self.width)
+            .map(|x| {
+                x.iter()
+                    .map(|x| x.to_string())
+                    .collect::<Vec<String>>()
+                    .join("")
+            })
+            .collect::<Vec<_>>()
+            .join("\r\n")
+    }
 }
 
 impl fmt::Display for Buffer {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for line in self.inner.chunks(self.width) {
             for cell in line {
-                write!(f, "{cell}")?;
+                if cell.char() == '\0' {
+                    write!(f, "{}", Cell::new(' '))?;
+                } else {
+                    write!(f, "{cell}")?;
+                }
             }
             writeln!(f)?;
         }

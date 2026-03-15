@@ -26,7 +26,7 @@ impl Window {
             term: backend,
         })
     }
-    /// Write all differed cells to the front buffer, and clear the back
+    /// Write all differing cells to the front buffer, and clear the back
     /// buffer at the same time.
     pub fn write_difference(&mut self) {
         for (dst, src) in self.front.iter_mut().zip(self.back.iter_mut()) {
@@ -116,12 +116,11 @@ impl Renderer for Window {
         self.write_difference();
         self.term.move_cursor(0, 0).unwrap();
         self.term
-            .write_str(&self.front.to_string())
+            .write_str(&self.front.string())
             .expect("Error: Failed to flush terminal.");
         self.term
             .move_cursor(self.cursor.x as u16, self.cursor.y as u16)
             .unwrap();
-        self.term.flush().unwrap();
     }
     fn begin_pass(&mut self) -> crate::render::Frame<'_, Self> {
         Frame::new(self)
@@ -141,14 +140,16 @@ mod tests {
 
     use super::*;
 
-    #[ignore]
     #[test]
     fn window_draw() {
         let rect = Rect::new(5, 5).with_fill(Cell::new('x'));
 
         let backend = Terminal::default();
         let mut renderer = Window::new(Box::new(backend)).unwrap();
-        renderer.begin_pass().draw(rect, (5, 5)).end_pass();
+        renderer.begin_pass().draw(rect, (0, 0)).end_pass();
+        sleep(Duration::from_millis(50));
+        renderer.begin_pass().draw(rect, (6, 6)).end_pass();
+        sleep(Duration::from_millis(50));
     }
 
     #[test]
@@ -162,11 +163,11 @@ mod tests {
 
         let mut x = 0;
         let mut y = 0;
-        for i in 0..60 {
+        for i in 0..120 {
             renderer.begin_pass().draw(initial_rect, (x, y)).end_pass();
             x = (x + 1) % w as i32;
             y = (y + 1) % h as i32;
-            sleep(Duration::from_millis(100));
+            sleep(Duration::from_millis(20));
         }
     }
 }

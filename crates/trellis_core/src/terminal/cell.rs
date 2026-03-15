@@ -75,6 +75,10 @@ impl Cell {
     pub fn is_null(&self) -> bool {
         self.ch == '\0'
     }
+    #[inline]
+    pub fn bytes(&self) -> Vec<u8> {
+        self.stylize(self.style).as_bytes().to_vec()
+    }
 }
 
 impl fmt::Display for Cell {
