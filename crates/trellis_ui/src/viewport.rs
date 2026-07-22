@@ -7,14 +7,21 @@ use trellis_terminal::backend::Backend;
 use crate::render::Renderer;
 use crate::{primitives::*, render::Frame};
 
-pub struct Window {
+pub struct Viewport {
     front: Buffer,
     back: Buffer,
     cursor: Pos,
     term: Box<dyn Backend>,
 }
 
-impl Window {
+#[derive(Clone, Copy)]
+pub struct DifferingCell {
+    x: usize,
+    y: usize,
+    cell: Cell,
+}
+
+impl Viewport {
     #[inline]
     pub fn new(mut backend: Box<dyn Backend>) -> crate::Result<Self> {
         let (w, h) = backend.size()?;
@@ -28,13 +35,16 @@ impl Window {
     }
     /// Write all differing cells to the front buffer, and clear the back
     /// buffer at the same time.
-    pub fn write_difference(&mut self) {
-        for (dst, src) in self.front.iter_mut().zip(self.back.iter_mut()) {
-            if dst != src && !src.is_null() {
+    pub fn write_difference(&mut self) -> Vec<DifferingCell> {
+        let mut ret = Vec::new();
+        for (((x, y), dst), src) in self.front.positioned_iter_mut().zip(self.back.iter_mut()) {
+            if dst != src {
                 *dst = *src;
+                ret.push(DifferingCell { x, y, cell: *dst });
             }
+            *src = Cell::new(' ');
         }
-        self.back = Buffer::new(self.front.width(), self.front.height());
+        ret
     }
     pub fn resize(&mut self, nw: usize, nh: usize) {
         let mut new_front = Buffer::new(nw, nh);
@@ -61,7 +71,7 @@ impl Window {
 }
 
 // Cursor controls
-impl Window {
+impl Viewport {
     #[inline]
     pub fn move_cursor_to(&mut self, pos: impl Into<Pos>) {
         let pos = pos.into();
@@ -101,7 +111,7 @@ impl Window {
     }
 }
 
-impl Renderer for Window {
+impl Renderer for Viewport {
     fn composite(&mut self, pos: Pos, primitive: Primitive) {
         match primitive {
             Primitive::Region(r) => {
@@ -113,11 +123,11 @@ impl Renderer for Window {
         }
     }
     fn flush(&mut self) {
-        self.write_difference();
-        self.term.move_cursor(0, 0).unwrap();
-        self.term
-            .write_str(&self.front.string())
-            .expect("Error: Failed to flush terminal.");
+        let difference = self.write_difference();
+        for cell in difference {
+            self.term.move_cursor(cell.x as u16, cell.y as u16).unwrap();
+            self.term.write_str(&cell.cell.to_string()).unwrap();
+        }
         self.term
             .move_cursor(self.cursor.x as u16, self.cursor.y as u16)
             .unwrap();
@@ -132,7 +142,10 @@ impl Renderer for Window {
 
 #[cfg(test)]
 mod tests {
-    use std::{thread::sleep, time::Duration};
+    use std::{
+        thread::sleep,
+        time::{Duration, Instant},
+    };
 
     use trellis_terminal::Terminal;
 
@@ -141,11 +154,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn window_draw() {
+    fn viewport_draw() {
         let rect = Rect::new(5, 5).with_fill(Cell::new('x'));
 
         let backend = Terminal::default();
-        let mut renderer = Window::new(Box::new(backend)).unwrap();
+        let mut renderer = Viewport::new(Box::new(backend)).unwrap();
         renderer.begin_pass().draw(rect, (0, 0)).end_pass();
         sleep(Duration::from_millis(50));
         renderer.begin_pass().draw(rect, (6, 6)).end_pass();
@@ -154,20 +167,62 @@ mod tests {
 
     #[test]
     fn animate() {
-        let mut initial_rect = Rect::new(5, 5).with_fill(Cell::new('x'));
+        let mut initial_rect = Rect::new(5, 4).with_fill(Cell::new('x'));
         let mut backend = Terminal::default();
         backend.enter_alternate_screen();
         backend.enable_raw_mode();
         let (w, h) = backend.size().unwrap();
-        let mut renderer = Window::new(Box::new(backend)).unwrap();
+        let mut renderer = Viewport::new(Box::new(backend)).unwrap();
 
         let mut x = 0;
         let mut y = 0;
-        for i in 0..120 {
+        let mut dx = 1;
+        let mut dy = 1;
+
+        let now = Instant::now();
+        for i in 0..240 {
             renderer.begin_pass().draw(initial_rect, (x, y)).end_pass();
-            x = (x + 1) % w as i32;
-            y = (y + 1) % h as i32;
-            sleep(Duration::from_millis(20));
+            if x + dx > (w - 5) as i32 || x + dx <= 0 {
+                dx = -dx;
+            }
+            if y + dy > (h - 4) as i32 || y + dy <= 0 {
+                dy = -dy;
+            }
+            x += dx;
+            y += dy;
         }
+        let elapsed = now.elapsed().as_secs_f32();
+
+        let fps = 1.0 / (elapsed / 240.0);
+        drop(renderer);
+        println!("{fps}");
+    }
+    #[test]
+    fn stress() {
+        let mut backend = Terminal::default();
+        backend.enter_alternate_screen();
+        backend.enable_raw_mode();
+        let (w, h) = backend.size().unwrap();
+        let mut renderer = Viewport::new(Box::new(backend)).unwrap();
+
+        let chars = ['@', '#', '%', '&', '+', '=', '-', ':', '.'];
+
+        let scatters = chars
+            .iter()
+            .map(|x| Rect::new(w as u16, h as u16).with_fill(Cell::new(*x)))
+            .collect::<Vec<_>>();
+
+        let now = Instant::now();
+        for i in 0..240 {
+            renderer
+                .begin_pass()
+                .draw(scatters[i % scatters.len()], (0, 0))
+                .end_pass();
+        }
+        let elapsed = now.elapsed().as_secs_f32();
+
+        let fps = 1.0 / (elapsed / 240.0);
+        drop(renderer);
+        println!("{fps}");
     }
 }

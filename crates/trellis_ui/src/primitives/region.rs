@@ -70,6 +70,7 @@ impl Region {
         let pos = pos.into();
         let mut y = pos.y as usize;
         let len = dst.width() - pos.x as usize;
+        #[allow(clippy::explicit_counter_loop)]
         for line in self.cells.iter() {
             let a = len.min(line.len());
             dst.set_sequence(pos.x as usize, y, &line[0..a]);

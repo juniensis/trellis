@@ -29,6 +29,14 @@ impl<'a, Renderer: crate::render::Renderer> Frame<'a, Renderer> {
         self.inner.composite(pos.into(), prim);
         self
     }
+    pub fn draw_primitive<PRIM: Into<Primitive>, P: Into<Pos>>(
+        mut self,
+        prim: PRIM,
+        pos: P,
+    ) -> Self {
+        self.inner.composite(pos.into(), prim.into());
+        self
+    }
     pub fn end_pass(mut self) {
         self.inner.end_pass();
     }
