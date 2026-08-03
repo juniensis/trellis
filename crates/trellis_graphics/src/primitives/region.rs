@@ -5,42 +5,48 @@ use trellis_core::{
     terminal::{buffer::Buffer, cell::Cell},
 };
 
+use crate::primitives::Scatter;
+
 /// A dynamically resizing rectangular cell region.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Region {
     cells: Vec<Vec<Cell>>,
-    width: u16,
-    height: u16,
+    width: u32,
+    height: u32,
+    z_order: u32,
 }
 
 impl Region {
     #[inline]
-    pub fn build(cells: Vec<&[Cell]>) -> Self {
-        let (width, height) = (cells[0].len() as u16, cells.len() as u16);
+    pub fn build(cells: Vec<&[Cell]>, z_order: u32) -> Self {
+        let (width, height) = (cells[0].len() as u32, cells.len() as u32);
         Self {
             cells: cells.iter().map(|x| x.to_vec()).collect(),
             width,
             height,
+            z_order,
         }
     }
     #[inline]
-    pub fn new() -> Self {
+    pub fn new(z_order: u32) -> Self {
         Self {
             cells: vec![vec![Cell::null(); 4]; 4],
             width: 4,
             height: 4,
+            z_order,
         }
     }
     #[inline]
-    pub fn with_capacity(width: u16, height: u16) -> Self {
+    pub fn with_capacity(width: u32, height: u32, z_order: u32) -> Self {
         Self {
             cells: vec![vec![Cell::null(); width as usize]; height as usize],
             width,
             height,
+            z_order,
         }
     }
     #[inline]
-    pub fn set_cell(&mut self, x: u16, y: u16, cell: Cell) {
+    pub fn set_cell(&mut self, x: u32, y: u32, cell: Cell) {
         while y as usize >= self.cells.len() {
             self.cells.push(vec![Cell::null(); self.width as usize]);
         }
@@ -56,25 +62,65 @@ impl Region {
         self.cells[y as usize][x as usize] = cell;
     }
     #[inline]
-    pub fn get_cell(&self, x: u16, y: u16) -> Option<&Cell> {
+    pub fn get_cell(&self, x: u32, y: u32) -> Option<&Cell> {
         self.cells
             .get(y as usize)
             .and_then(|inner| inner.get(x as usize))
     }
     #[inline]
-    pub fn size(&self) -> (u16, u16) {
+    pub fn size(&self) -> (u32, u32) {
         (self.width, self.height)
     }
     #[inline]
     pub fn composite(&self, pos: impl Into<Pos>, dst: &mut Buffer) {
         let pos = pos.into();
         let mut y = pos.y as usize;
-        let len = dst.width() - pos.x as usize;
+        let len = dst.width() as usize - pos.x as usize;
         #[allow(clippy::explicit_counter_loop)]
         for line in self.cells.iter() {
             let a = len.min(line.len());
-            dst.set_sequence(pos.x as usize, y, &line[0..a]);
+            dst.set_sequence(pos.x as u32, y as u32, &line[0..a]);
             y += 1;
+        }
+    }
+    #[inline]
+    pub fn positioned_iter(&self) -> impl Iterator<Item = (Pos, Cell)> {
+        (0..self.height).flat_map(move |y| {
+            (0..self.width).flat_map(move |x| self.get_cell(x, y).map(|&c| ((x, y).into(), c)))
+        })
+    }
+    #[inline]
+    pub fn merge(&mut self, other: &Self) {
+        for (p, c) in other.positioned_iter() {
+            if self.z_order < other.z_order {
+                if self
+                    .get_cell(p.x as u32, p.y as u32)
+                    .is_none_or(|cx| cx != &c)
+                {
+                    self.set_cell(p.x as u32, p.y as u32, c);
+                }
+            } else {
+                if self.get_cell(p.x as u32, p.y as u32).is_none() {
+                    self.set_cell(p.x as u32, p.y as u32, c);
+                }
+            }
+        }
+    }
+    pub fn z_order(&self) -> u32 {
+        self.z_order
+    }
+    pub fn set_z_order(&mut self, z_order: u32) {
+        self.z_order = z_order;
+    }
+    #[inline]
+    pub fn merge_scatter(&mut self, other: &Scatter) {
+        for (p, c) in other.iter() {
+            if self
+                .get_cell(p.x as u32, p.y as u32)
+                .is_none_or(|cx| cx != &c)
+            {
+                self.set_cell(p.x as u32, p.y as u32, c);
+            }
         }
     }
 }
@@ -93,7 +139,7 @@ impl Display for Region {
 
 impl Default for Region {
     fn default() -> Self {
-        Self::new()
+        Self::new(0)
     }
 }
 
@@ -103,7 +149,7 @@ mod tests {
 
     #[test]
     fn composite_onto_buffer() {
-        let mut region = Region::new();
+        let mut region = Region::new(0);
         region.set_cell(1, 1, Cell::new('x'));
         region.set_cell(2, 1, Cell::new('x'));
         region.set_cell(3, 1, Cell::new('x'));

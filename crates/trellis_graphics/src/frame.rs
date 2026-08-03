@@ -1,0 +1,35 @@
+use trellis_core::primitives::Pos;
+
+use crate::{primitives::Primitive, viewport::Viewport};
+
+pub enum Command {
+    Draw(Primitive),
+    Transform(Box<dyn FnOnce(Primitive) -> Primitive>),
+}
+
+pub struct Frame<'a> {
+    viewport: &'a mut Viewport,
+    buffer: Vec<(Pos, Primitive)>,
+}
+
+impl<'a> Frame<'a> {
+    pub fn new(viewport: &'a mut Viewport) -> Self {
+        Self {
+            viewport,
+            buffer: Vec::new(),
+        }
+    }
+    pub fn draw(mut self, position: impl Into<Pos>, object: impl Into<Primitive>) -> Self {
+        self.buffer.push((position.into(), object.into()));
+        self
+    }
+    pub fn submit(mut self) {
+        let viewport = self.viewport;
+        let mut buffer = self.buffer;
+        buffer.sort_by_key(|(_, x)| x.z_order());
+        for (pos, primitive) in buffer {
+            viewport.composite(pos, primitive);
+        }
+        viewport.flush();
+    }
+}

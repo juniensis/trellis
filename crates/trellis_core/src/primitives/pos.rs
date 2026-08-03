@@ -34,8 +34,8 @@ impl Pos {
     }
     #[inline]
     pub fn displace(&mut self, dx: i16, dy: i16) {
-        self.x = dx;
-        self.y = dy;
+        self.x += dx;
+        self.y += dy;
     }
     #[inline]
     pub fn displaced(mut self, dx: i16, dy: i16) -> Self {
@@ -64,6 +64,13 @@ impl From<(u16, u16)> for Pos {
     }
 }
 
+impl From<(u32, u32)> for Pos {
+    fn from(value: (u32, u32)) -> Self {
+        let (x, y) = value;
+        Self::new(x as i16, y as i16)
+    }
+}
+
 impl From<(usize, usize)> for Pos {
     fn from(value: (usize, usize)) -> Self {
         let (x, y) = value;
@@ -80,6 +87,13 @@ impl From<(i16, i16)> for Pos {
 
 impl From<(i32, i32)> for Pos {
     fn from(value: (i32, i32)) -> Self {
+        let (x, y) = value;
+        Self::new(x as i16, y as i16)
+    }
+}
+
+impl From<(i64, i64)> for Pos {
+    fn from(value: (i64, i64)) -> Self {
         let (x, y) = value;
         Self::new(x as i16, y as i16)
     }

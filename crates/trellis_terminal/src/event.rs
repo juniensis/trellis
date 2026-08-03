@@ -54,6 +54,11 @@ impl Modifiers {
     }
 
     #[inline]
+    pub fn is_none(&self) -> bool {
+        self.0 == Self::NONE
+    }
+
+    #[inline]
     pub fn is_alt(&self) -> bool {
         self.0 & Self::ALT != 0
     }

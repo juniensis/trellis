@@ -2,19 +2,27 @@ use std::collections::HashMap;
 
 use trellis_core::terminal::{Buffer, cell::Cell};
 
-use crate::primitives::bounds::Bounds;
+use crate::primitives::{Region, bounds::Bounds};
 use trellis_core::primitives::Pos;
 
 #[derive(Debug, Clone)]
 pub struct Scatter {
     cells: HashMap<Pos, Cell>,
+    z_order: u32,
 }
 
 impl Scatter {
     #[inline]
-    pub fn new<P: Into<Pos>, C: IntoIterator<Item = (P, Cell)>>(cells: C) -> Self {
+    pub fn build<P: Into<Pos>, C: IntoIterator<Item = (P, Cell)>>(cells: C, z_order: u32) -> Self {
         Self {
             cells: HashMap::from_iter(cells.into_iter().map(|(p, c)| (p.into(), c))),
+            z_order,
+        }
+    }
+    pub fn new(z_order: u32) -> Self {
+        Self {
+            cells: HashMap::new(),
+            z_order,
         }
     }
     #[inline]
@@ -35,7 +43,39 @@ impl Scatter {
         let offset = pos.into();
         for (p, cell) in self.iter() {
             let pos = p + offset;
-            dst.set_cell(pos.x as usize, pos.y as usize, cell);
+            dst.set_cell(pos.x as u32, pos.y as u32, cell);
+        }
+    }
+    #[inline]
+    pub fn z_order(&self) -> u32 {
+        self.z_order
+    }
+    #[inline]
+    pub fn set_z_order(&mut self, z_order: u32) {
+        self.z_order = z_order;
+    }
+    #[inline]
+    pub fn merge(&mut self, other: &Self) {
+        for (p, c) in other.iter() {
+            if self.z_order < other.z_order {
+                self.insert(p, c);
+            } else {
+                if !self.cells.contains_key(&p) {
+                    self.insert(p, c);
+                }
+            }
+        }
+    }
+    #[inline]
+    pub fn merge_region(&mut self, other: &Region) {
+        for (p, c) in other.positioned_iter() {
+            if self.z_order < other.z_order() {
+                self.insert(p, c);
+            } else {
+                if !self.cells.contains_key(&p) {
+                    self.insert(p, c);
+                }
+            }
         }
     }
     #[inline]
@@ -61,8 +101,8 @@ mod tests {
     use crate::primitives::{self, scatter::Scatter};
 
     #[test]
-    fn bounds_t() {
-        let mut scatter = Scatter::new([((0, 0), Cell::new(' ')), ((5, 5), Cell::new(' '))]);
+    fn bounds() {
+        let mut scatter = Scatter::build([((0, 0), Cell::new(' ')), ((5, 5), Cell::new(' '))], 0);
 
         println!("{:?}", scatter.bounds());
     }

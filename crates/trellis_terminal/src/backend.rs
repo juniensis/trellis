@@ -13,7 +13,7 @@ pub trait Backend {
     where
         Self: Sized;
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), TerminalError>;
-    fn size(&mut self) -> Result<(usize, usize), TerminalError>;
+    fn size(&mut self) -> Result<(u32, u32), TerminalError>;
     fn enable_raw_mode(&mut self) -> Result<(), TerminalError>;
     fn disable_raw_mode(&mut self) -> Result<(), TerminalError>;
     fn flush(&mut self) -> Result<(), TerminalError>;
@@ -125,7 +125,7 @@ mod tests {
             let _ = self.buffer.write(bytes)?;
             Ok(())
         }
-        fn size(&mut self) -> Result<(usize, usize), TerminalError> {
+        fn size(&mut self) -> Result<(u32, u32), TerminalError> {
             Ok((0, 0))
         }
         fn enable_raw_mode(&mut self) -> Result<(), TerminalError> {

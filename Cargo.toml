@@ -7,11 +7,11 @@ edition = "2024"
 resolver = "2"
 members = [
   "crates/trellis_core",
+  "crates/trellis_graphics",
   "crates/trellis_terminal",
-  "crates/trellis_ui",
 ]
 
 [dependencies]
 trellis_terminal = { path = "crates/trellis_terminal" }
-trellis_ui = { path = "crates/trellis_ui" }
+trellis_graphics = { path = "crates/trellis_graphics" }
 trellis_core = { path = "crates/trellis_core" }

@@ -79,9 +79,9 @@ impl Backend for Terminal {
         let _ = self.buffer.write(bytes)?;
         Ok(())
     }
-    fn size(&mut self) -> Result<(usize, usize), TerminalError> {
+    fn size(&mut self) -> Result<(u32, u32), TerminalError> {
         let sz = crossterm::terminal::window_size()?;
-        Ok((sz.columns as usize, sz.rows as usize))
+        Ok((sz.columns as u32, sz.rows as u32))
     }
     fn enable_raw_mode(&mut self) -> Result<(), TerminalError> {
         enable_raw_mode()?;

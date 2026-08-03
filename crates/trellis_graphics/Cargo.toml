@@ -1,8 +1,8 @@
 [package]
-name = "trellis_ui"
+name = "trellis_graphics"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-trellis_core = { path = "../trellis_core/" }
 trellis_terminal = { path = "../trellis_terminal/" }
+trellis_core = { path = "../trellis_core/" }
