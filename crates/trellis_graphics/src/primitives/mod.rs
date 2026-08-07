@@ -5,16 +5,24 @@ pub mod scatter;
 pub use bounds::Bounds;
 pub use region::Region;
 pub use scatter::Scatter;
-use trellis_core::{primitives::Pos, terminal::Cell};
+use trellis_core::{
+    primitives::Pos,
+    terminal::{
+        Cell,
+        style::{Stylable, Style},
+    },
+};
 
-pub trait Renderable {
-    fn render(&self) -> Primitive;
+#[derive(Debug, Default, Clone, Copy)]
+pub struct RenderCtx {
+    pub viewport_width: u32,
+    pub viewport_height: u32,
+    pub time: f32,
+    pub delta: f32,
 }
 
-impl<R: Renderable> From<&R> for Primitive {
-    fn from(value: &R) -> Self {
-        value.render()
-    }
+pub trait Renderable {
+    fn render(&self, ctx: RenderCtx) -> Primitive;
 }
 
 #[derive(Debug, Clone)]
@@ -72,5 +80,30 @@ impl Primitive {
             Self::Region(r) => r.set_cell(pos.x as u32, pos.y as u32, cell),
             Self::Scatter(s) => s.insert(pos, cell),
         }
+    }
+    pub fn write_str<S: AsRef<str>>(&mut self, pos: impl Into<Pos>, string: S) {
+        let pos = pos.into();
+        for (offset, ch) in string.as_ref().chars().enumerate() {
+            let x = pos.x + offset as i16;
+            self.set_cell((x, pos.y), Cell::new(ch));
+        }
+    }
+    pub fn write_str_styled<S: AsRef<str>>(
+        &mut self,
+        pos: impl Into<Pos>,
+        string: S,
+        style: Style,
+    ) {
+        let pos = pos.into();
+        for (offset, ch) in string.as_ref().chars().enumerate() {
+            let x = pos.x + offset as i16;
+            self.set_cell((x, pos.y), Cell::new(ch).with_style(style));
+        }
+    }
+}
+
+impl Renderable for Primitive {
+    fn render(&self, ctx: RenderCtx) -> Primitive {
+        self.clone()
     }
 }

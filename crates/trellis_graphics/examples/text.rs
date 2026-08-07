@@ -23,7 +23,7 @@ fn main() {
         let frametime = start.elapsed().as_secs_f32();
 
         text.set_text(format!("{}fps", 1.0 / frametime));
-        shell.start_frame().draw((0, 0), &text).submit();
+        shell.start_frame().with_draw((0, 0), &text).submit();
 
         start = Instant::now();
     }

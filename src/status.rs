@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 
 use trellis_core::terminal::Cell;
-use trellis_graphics::primitives::{Primitive, Renderable};
+use trellis_graphics::primitives::{Primitive, RenderCtx, Renderable};
 use trellis_terminal::event::{Event, KeyCode};
 
 use crate::{State, input::Keystroke};
@@ -9,6 +9,7 @@ use crate::{State, input::Keystroke};
 pub struct StatusBar {
     state: State,
     input_buffer: VecDeque<Keystroke>,
+    message_buffer: VecDeque<String>,
     max_width: u32,
 }
 
@@ -17,6 +18,7 @@ impl StatusBar {
         Self {
             state: State::Normal,
             input_buffer: VecDeque::new(),
+            message_buffer: VecDeque::new(),
             max_width: 32,
         }
     }
@@ -42,6 +44,14 @@ impl StatusBar {
             self.input_buffer.pop_back();
         }
     }
+    pub fn send_message<S: ToString>(&mut self, string: S) {
+        let mut message = string.to_string();
+        message.truncate(16);
+        self.message_buffer.push_front(message);
+        while self.message_buffer.len() > 2 {
+            self.message_buffer.pop_back();
+        }
+    }
 }
 
 impl Default for StatusBar {
@@ -51,25 +61,15 @@ impl Default for StatusBar {
 }
 
 impl Renderable for StatusBar {
-    fn render(&self) -> Primitive {
+    fn render(&self, _ctx: RenderCtx) -> Primitive {
         let mut region = Primitive::new_region(255);
 
         match self.state {
             State::Normal => {
-                region.set_cell((1, 0), Cell::new('N'));
-                region.set_cell((2, 0), Cell::new('O'));
-                region.set_cell((3, 0), Cell::new('R'));
-                region.set_cell((4, 0), Cell::new('M'));
-                region.set_cell((5, 0), Cell::new('A'));
-                region.set_cell((6, 0), Cell::new('L'));
+                region.write_str((1, 0), "NORMAL");
             }
             State::Insert => {
-                region.set_cell((1, 0), Cell::new('I'));
-                region.set_cell((2, 0), Cell::new('N'));
-                region.set_cell((3, 0), Cell::new('S'));
-                region.set_cell((4, 0), Cell::new('E'));
-                region.set_cell((5, 0), Cell::new('R'));
-                region.set_cell((6, 0), Cell::new('T'));
+                region.write_str((1, 0), "INSERT");
             }
         }
 
@@ -89,6 +89,10 @@ impl Renderable for StatusBar {
                 }
                 _ => {}
             }
+        }
+
+        for (x, message) in self.message_buffer.iter().enumerate() {
+            region.write_str(((self.max_width as i64 - 32) + (x as i64 * 16), 0), message);
         }
 
         region

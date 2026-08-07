@@ -1,6 +1,6 @@
 use trellis_core::terminal::Cell;
 use trellis_graphics::{
-    primitives::{Primitive, Renderable},
+    primitives::{Primitive, RenderCtx, Renderable},
     shapes::Rectangle,
 };
 
@@ -93,8 +93,8 @@ impl TextBox {
 }
 
 impl Renderable for TextBox {
-    fn render(&self) -> Primitive {
-        let mut rect = Rectangle::new(self.width(), self.height(), self.z_order).render();
+    fn render(&self, _ctx: RenderCtx) -> Primitive {
+        let mut rect = Rectangle::new(self.width(), self.height(), self.z_order).render(_ctx);
 
         for (y, line) in self.content.lines.iter().enumerate() {
             for (x, ch) in line.chars().enumerate() {
@@ -133,7 +133,7 @@ mod tests {
                 }
             }
 
-            shell.start_frame().draw((5, 5), &text_box).submit();
+            shell.start_frame().with_draw((5, 5), &text_box).submit();
         }
     }
 }

@@ -13,9 +13,11 @@ use crate::{
     status::StatusBar,
     viewport::Viewport,
 };
+
 pub mod board;
 pub mod command;
 pub mod entities;
+pub mod file;
 pub mod id;
 pub mod input;
 pub mod status;
@@ -63,26 +65,42 @@ impl Trellis {
             State::Insert => todo!(),
         }
     }
+    pub fn debug<S: ToString>(&mut self, message: S) {
+        self.status.send_message(message);
+    }
     pub fn handle_command(&mut self, command: Command) {
         match command {
             Command::NormalCursorLeft(x) => self.cursor_x -= x as i64,
             Command::NormalCursorUp(x) => self.cursor_y += x as i64,
             Command::NormalCursorDown(x) => self.cursor_y -= x as i64,
             Command::NormalCursorRight(x) => self.cursor_x += x as i64,
+            Command::NormalInsert => {
+                self.debug("insert");
+                if let Some(at_cursor) =
+                    self.board
+                        .try_get_at_cursor(&self.viewport, self.cursor_x, self.cursor_y)
+                {
+                    self.debug(format!("Found: {}", at_cursor.id));
+                } else {
+                    self.board.create_textbox(self.cursor_x, self.cursor_y);
+                }
+            }
             _ => {}
         }
     }
     pub fn draw<'a>(&'a self, mut frame: Frame<'a>) -> Frame<'a> {
-        let mut textbox = TextBox::default();
-        textbox.content.insert_str(0, 0, "Test Box");
-        let entity = Entity::new(Id::new(0, 0), entities::EntityKind::TextBox(textbox), 0, 0);
-        if let Some(coords) = self.viewport.translate_world_coords(entity.x, entity.y) {
-            frame
-                .draw(coords, &entity)
-                .draw((0, self.viewport.h - 1), &self.status)
-        } else {
-            frame.draw((0, self.viewport.h - 1), &self.status)
+        frame.draw((0, self.viewport.h - 1), &self.status);
+
+        for contained in self.board.all_within_viewport(&self.viewport) {
+            if let Some(coords) = self
+                .viewport
+                .translate_world_coords(contained.x, contained.y)
+            {
+                frame.draw(coords, contained);
+            }
         }
+
+        frame
     }
     pub fn transformed_cursor_position(&mut self) -> (u32, u32) {
         self.viewport.follow_cursor(self.cursor_x, self.cursor_y, 1);

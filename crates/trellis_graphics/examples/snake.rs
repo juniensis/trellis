@@ -5,7 +5,7 @@ use std::{
 
 use trellis_core::{primitives::Pos, terminal::Cell};
 use trellis_graphics::{
-    primitives::{Renderable, Scatter},
+    primitives::{RenderCtx, Renderable, Scatter},
     shell::Shell,
 };
 use trellis_terminal::event::{Event, KeyCode};
@@ -86,7 +86,7 @@ impl SnakeState {
 }
 
 impl Renderable for SnakeState {
-    fn render(&self) -> trellis_graphics::primitives::Primitive {
+    fn render(&self, _ctx: RenderCtx) -> trellis_graphics::primitives::Primitive {
         let mut scatter = Scatter::new(0);
 
         for pos in self.positions.iter() {
@@ -116,7 +116,7 @@ fn main() {
         }
 
         state.update();
-        shell.start_frame().draw((0, 0), &state).submit();
+        shell.start_frame().with_draw((0, 0), &state).submit();
 
         while now.elapsed() < Duration::from_secs_f32(1.0 / 240.0) {}
     }

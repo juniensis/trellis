@@ -1,6 +1,6 @@
 use trellis_core::terminal::Cell;
 
-use crate::primitives::{Region, Renderable};
+use crate::primitives::{Region, RenderCtx, Renderable};
 
 pub struct Text {
     lines: Vec<String>,
@@ -29,7 +29,7 @@ impl Text {
 }
 
 impl Renderable for Text {
-    fn render(&self) -> crate::primitives::Primitive {
+    fn render(&self, _ctx: RenderCtx) -> crate::primitives::Primitive {
         let mut region = Region::new(self.z_order);
 
         for (y, line) in self.get_lines().iter().enumerate() {

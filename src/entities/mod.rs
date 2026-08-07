@@ -1,4 +1,4 @@
-use trellis_graphics::primitives::Renderable;
+use trellis_graphics::primitives::{RenderCtx, Renderable};
 
 use crate::{entities::text_box::TextBox, id::Id};
 
@@ -27,8 +27,8 @@ impl EntityKind {
         match self {
             Self::TextBox(t) => {
                 let (x1, x2) = (entity_x, entity_x + self.width());
-                let (y1, y2) = (entity_y, entity_y + self.height());
-                cursor_x > x1 && cursor_x < x2 && cursor_y > y1 && cursor_y < y2
+                let (y1, y2) = (entity_y, entity_y - self.height());
+                cursor_x >= x1 && cursor_x <= x2 && cursor_y <= y1 && cursor_y >= y2
             }
             Self::Connector { from, to } => todo!(),
         }
@@ -53,9 +53,9 @@ impl Entity {
 }
 
 impl Renderable for Entity {
-    fn render(&self) -> trellis_graphics::primitives::Primitive {
+    fn render(&self, ctx: RenderCtx) -> trellis_graphics::primitives::Primitive {
         match &self.kind {
-            EntityKind::TextBox(t) => t.render(),
+            EntityKind::TextBox(t) => t.render(ctx),
             _ => todo!(),
         }
     }

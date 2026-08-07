@@ -44,4 +44,21 @@ impl Viewport {
         self.w = nw;
         self.h = nh;
     }
+    pub fn contains(&self, x: i64, y: i64) -> bool {
+        x >= self.x && x <= self.x + self.w && y <= self.y && y >= self.y - self.h
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn viewport_contains() {
+        let viewport = Viewport::new(20, 20);
+        assert!(viewport.contains(0, 0));
+        assert!(viewport.contains(10, -10));
+        assert!(viewport.contains(0, -20));
+        assert!(viewport.contains(20, -20));
+    }
 }

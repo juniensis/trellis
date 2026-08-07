@@ -24,7 +24,7 @@ fn main() {
             }
         }
 
-        shell.start_frame().draw((x, y), &rect).submit();
+        shell.start_frame().with_draw((x, y), &rect).submit();
 
         if x + 10 >= shell.width() as i32 {
             dx = -1;

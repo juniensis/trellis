@@ -1,6 +1,6 @@
 use trellis_core::terminal::Cell;
 
-use crate::primitives::{Region, Renderable};
+use crate::primitives::{Region, RenderCtx, Renderable};
 
 pub struct Rectangle {
     pub width: u32,
@@ -39,7 +39,7 @@ impl Rectangle {
 }
 
 impl Renderable for Rectangle {
-    fn render(&self) -> crate::primitives::Primitive {
+    fn render(&self, _ctx: RenderCtx) -> crate::primitives::Primitive {
         let mut region = Region::new(self.z_order);
         region.set_cell(0, 0, self.corners[0]);
         region.set_cell(self.width, 0, self.corners[1]);

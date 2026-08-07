@@ -3,13 +3,14 @@ use std::time::Instant;
 use trellis_core::collections::Queue;
 use trellis_terminal::{Terminal, backend::Backend, event::Event};
 
-use crate::{frame::Frame, viewport::Viewport};
+use crate::{frame::Frame, primitives::RenderCtx, viewport::Viewport};
 
 pub struct Shell {
     viewport: Viewport,
     frame_idx: u32,
     init: Instant,
     last: Instant,
+    ctx: RenderCtx,
     events: Queue<Event>,
 }
 
@@ -42,6 +43,7 @@ impl Shell {
             frame_idx: 0,
             init: Instant::now(),
             last: Instant::now(),
+            ctx: RenderCtx::default(),
             events,
         }
     }
@@ -58,6 +60,13 @@ impl Shell {
         let frame = self.frame_idx;
         let frame_time = self.init.elapsed().as_secs_f32();
         let frame_delta = self.last.elapsed().as_secs_f32();
+
+        self.ctx = RenderCtx {
+            viewport_width: self.viewport.width(),
+            viewport_height: self.viewport.height(),
+            time: frame_time,
+            delta: frame_delta,
+        };
 
         self.last = Instant::now();
         self.frame_idx += 1;
@@ -85,7 +94,7 @@ impl Shell {
         (self.width(), self.height())
     }
     pub fn start_frame<'a>(&'a mut self) -> Frame<'a> {
-        Frame::new(&mut self.viewport)
+        Frame::new(&mut self.viewport, self.ctx)
     }
     pub fn end_frame(&mut self) {
         self.viewport().flush();

@@ -1,6 +1,9 @@
 use trellis_core::primitives::Pos;
 
-use crate::{primitives::Primitive, viewport::Viewport};
+use crate::{
+    primitives::{Primitive, RenderCtx, Renderable},
+    viewport::Viewport,
+};
 
 pub enum Command {
     Draw(Primitive),
@@ -10,18 +13,23 @@ pub enum Command {
 pub struct Frame<'a> {
     viewport: &'a mut Viewport,
     buffer: Vec<(Pos, Primitive)>,
+    ctx: RenderCtx,
 }
 
 impl<'a> Frame<'a> {
-    pub fn new(viewport: &'a mut Viewport) -> Self {
+    pub fn new(viewport: &'a mut Viewport, ctx: RenderCtx) -> Self {
         Self {
             viewport,
             buffer: Vec::new(),
+            ctx,
         }
     }
-    pub fn draw(mut self, position: impl Into<Pos>, object: impl Into<Primitive>) -> Self {
-        self.buffer.push((position.into(), object.into()));
+    pub fn with_draw<R: Renderable>(mut self, position: impl Into<Pos>, object: &R) -> Self {
+        self.buffer.push((position.into(), object.render(self.ctx)));
         self
+    }
+    pub fn draw<R: Renderable>(&mut self, position: impl Into<Pos>, object: &R) {
+        self.buffer.push((position.into(), object.render(self.ctx)));
     }
     pub fn submit(mut self) {
         let viewport = self.viewport;
