@@ -1,65 +1,77 @@
-use std::{
-    collections::VecDeque,
-    time::{Duration, Instant},
-};
+//! Accepts events and converts them into top-level commands.
+
+use std::{collections::VecDeque, time::Instant};
 
 use trellis_terminal::event::{Event, KeyCode, Modifiers};
 
-use crate::command::Command;
+use crate::commands::Command;
 
-#[derive(Debug, Clone)]
-pub struct Keystroke {
-    pub code: KeyCode,
-    pub modifiers: Modifiers,
-    pub since_last: Option<Duration>,
+#[derive(Debug, Clone, Copy)]
+pub enum State {
+    Normal,
+    Insert,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone)]
+pub struct KeyStroke {
+    code: KeyCode,
+    modifiers: Modifiers,
+    time: Instant,
+}
+
 pub struct InputStateMachine {
-    keystroke_buffer: VecDeque<Keystroke>,
-    last_keystroke: Option<Instant>,
+    state: State,
+    buffer: VecDeque<KeyStroke>,
 }
 
 impl InputStateMachine {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            state: State::Normal,
+            buffer: VecDeque::new(),
+        }
     }
-    pub fn handle_normal(&mut self, event: &Event) -> Option<Command> {
+    pub fn handle(&mut self, event: &Event) -> Option<Command> {
         let keystroke = if let Event::Key { code, modifiers } = event {
-            Keystroke {
+            KeyStroke {
                 code: *code,
                 modifiers: *modifiers,
-                since_last: self.last_keystroke.map(|x| x.elapsed()),
+                time: Instant::now(),
             }
         } else {
             return None;
         };
 
-        self.last_keystroke = Some(Instant::now());
-        self.keystroke_buffer.push_front(keystroke.clone());
-        while self.keystroke_buffer.len() > 16 {
-            self.keystroke_buffer.pop_back();
+        self.buffer.push_front(keystroke.clone());
+        while self.buffer.len() > 16 {
+            self.buffer.pop_back();
         }
 
-        if keystroke.modifiers.is_none() {
-            match keystroke.code {
-                KeyCode::Char(ch) => match ch {
-                    'h' => return Some(Command::NormalCursorLeft(1)),
-                    'j' => return Some(Command::NormalCursorDown(1)),
-                    'k' => return Some(Command::NormalCursorUp(1)),
-                    'l' => return Some(Command::NormalCursorRight(1)),
-                    'H' => return Some(Command::NormalCursorLeft(10)),
-                    'J' => return Some(Command::NormalCursorDown(10)),
-                    'K' => return Some(Command::NormalCursorUp(10)),
-                    'L' => return Some(Command::NormalCursorRight(10)),
-                    'i' => return Some(Command::NormalInsert),
-                    _ => {}
-                },
-                KeyCode::Enter => return Some(Command::NormalEnter),
-                _ => {}
-            }
+        match self.state {
+            State::Normal => self.handle_normal(keystroke),
+            State::Insert => None,
+            _ => None,
         }
+    }
+    fn handle_normal(&self, stroke: KeyStroke) -> Option<Command> {
+        match stroke.code {
+            KeyCode::Char('h') => Some(Command::NormalCursorLeft(1)),
+            KeyCode::Char('j') => Some(Command::NormalCursorDown(1)),
+            KeyCode::Char('k') => Some(Command::NormalCursorUp(1)),
+            KeyCode::Char('l') => Some(Command::NormalCursorRight(1)),
+            KeyCode::Char('H') => Some(Command::NormalCursorLeft(10)),
+            KeyCode::Char('J') => Some(Command::NormalCursorDown(10)),
+            KeyCode::Char('K') => Some(Command::NormalCursorUp(10)),
+            KeyCode::Char('L') => Some(Command::NormalCursorRight(10)),
+            KeyCode::Char('i') => Some(Command::NormalInsert),
+            KeyCode::Enter => Some(Command::NormalEnter),
+            _ => None,
+        }
+    }
+}
 
-        None
+impl Default for InputStateMachine {
+    fn default() -> Self {
+        Self::new()
     }
 }

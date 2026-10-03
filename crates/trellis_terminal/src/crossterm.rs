@@ -42,7 +42,7 @@ impl Backend for Terminal {
                     let kc = match code {
                         crossterm::event::KeyCode::Esc => KeyCode::Escape,
                         crossterm::event::KeyCode::Enter => KeyCode::Enter,
-                        crossterm::event::KeyCode::Backspace => KeyCode::Enter,
+                        crossterm::event::KeyCode::Backspace => KeyCode::Backspace,
                         crossterm::event::KeyCode::Tab => KeyCode::Tab,
                         crossterm::event::KeyCode::Left => KeyCode::Left,
                         crossterm::event::KeyCode::Right => KeyCode::Right,

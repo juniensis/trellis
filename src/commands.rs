@@ -1,4 +1,3 @@
-#[derive(Debug)]
 pub enum Command {
     NormalCursorLeft(u32),
     NormalCursorDown(u32),

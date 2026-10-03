@@ -13,7 +13,7 @@ pub struct Viewport {
     pub backend: Box<dyn Backend>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct DifferingCell {
     x: u32,
     y: u32,
@@ -35,7 +35,14 @@ impl Viewport {
     /// buffer at the same time.
     pub fn write_difference(&mut self) -> Vec<DifferingCell> {
         let mut ret = Vec::new();
-        for (((x, y), dst), src) in self.front.positioned_iter_mut().zip(self.back.iter_mut()) {
+        for (((x, y), dst), (_, src)) in self
+            .front
+            .positioned_iter_mut()
+            .zip(self.back.positioned_iter_mut())
+        {
+            if src.is_null() {
+                continue;
+            }
             if dst != src {
                 *dst = *src;
                 ret.push(DifferingCell { x, y, cell: *dst });

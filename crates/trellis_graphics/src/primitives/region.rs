@@ -78,8 +78,12 @@ impl Region {
         let len = dst.width() as usize - pos.x as usize;
         #[allow(clippy::explicit_counter_loop)]
         for line in self.cells.iter() {
-            let a = len.min(line.len());
-            dst.set_sequence(pos.x as u32, y as u32, &line[0..a]);
+            for (idx, cl) in line.iter().enumerate() {
+                if cl.is_null() {
+                    continue;
+                }
+                dst.set_cell(idx as u32, y as u32, *cl);
+            }
             y += 1;
         }
     }

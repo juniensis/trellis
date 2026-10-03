@@ -12,6 +12,8 @@ members = [
 ]
 
 [dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
 trellis_terminal = { path = "crates/trellis_terminal" }
 trellis_graphics = { path = "crates/trellis_graphics" }
 trellis_core = { path = "crates/trellis_core" }

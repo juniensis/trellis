@@ -1,3 +1,6 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Viewport {
     pub x: i64,
     pub y: i64,
@@ -39,6 +42,14 @@ impl Viewport {
         } else if sy > self.h - 1 - margin {
             self.y -= sy - (self.h - 1 - margin);
         }
+    }
+    pub fn move_by(&mut self, dx: i64, dy: i64) {
+        self.x += dx;
+        self.y += dy;
+    }
+    pub fn move_to(&mut self, x: i64, y: i64) {
+        self.x = x;
+        self.y = y;
     }
     pub fn resize(&mut self, nw: i64, nh: i64) {
         self.w = nw;

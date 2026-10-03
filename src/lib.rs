@@ -1,32 +1,25 @@
 #![allow(unused)]
 
-use trellis_core::terminal::Cell;
-use trellis_graphics::frame::{self, Frame};
+use std::collections::HashSet;
+
+use trellis_graphics::frame::Frame;
 use trellis_terminal::event::Event;
 
 use crate::{
-    board::Board,
-    command::Command,
-    entities::{Entity, text_box::TextBox},
-    id::Id,
-    input::InputStateMachine,
-    status::StatusBar,
-    viewport::Viewport,
+    commands::Command,
+    file::TrellisFile,
+    input::{InputStateMachine, State},
+    ui::status::StatusBar,
+    world::{board::Board, id::Id, viewport::Viewport},
 };
 
-pub mod board;
-pub mod command;
-pub mod entities;
+pub mod block;
+pub mod commands;
+pub mod connector;
 pub mod file;
-pub mod id;
 pub mod input;
-pub mod status;
-pub mod viewport;
-
-pub enum State {
-    Normal,
-    Insert,
-}
+pub mod ui;
+pub mod world;
 
 pub struct Trellis {
     board: Board,
@@ -36,6 +29,7 @@ pub struct Trellis {
     status: StatusBar,
     cursor_x: i64,
     cursor_y: i64,
+    focused: HashSet<Id>,
 }
 
 impl Trellis {
@@ -45,48 +39,41 @@ impl Trellis {
             handler: InputStateMachine::default(),
             state: State::Normal,
             viewport: Viewport::new(width, height),
-            status: {
-                let mut bar = StatusBar::new();
-                bar.set_max_width(width);
-                bar
-            },
+            status: StatusBar::new(0, 0, width),
             cursor_x: 0,
             cursor_y: 0,
+            focused: HashSet::new(),
         }
-    }
-    pub fn resize(&mut self, nw: usize, nh: usize) {
-        self.viewport.resize(nw as i64, nh as i64);
-        self.status.set_max_width(nw as u32);
     }
     pub fn handle_event(&mut self, event: &Event) -> Option<Command> {
-        self.status.handle_key(event);
-        match self.state {
-            State::Normal => self.handler.handle_normal(event),
-            State::Insert => todo!(),
-        }
-    }
-    pub fn debug<S: ToString>(&mut self, message: S) {
-        self.status.send_message(message);
+        self.handler.handle(event)
     }
     pub fn handle_command(&mut self, command: Command) {
         match command {
             Command::NormalCursorLeft(x) => self.cursor_x -= x as i64,
-            Command::NormalCursorUp(x) => self.cursor_y += x as i64,
             Command::NormalCursorDown(x) => self.cursor_y -= x as i64,
+            Command::NormalCursorUp(x) => self.cursor_y += x as i64,
             Command::NormalCursorRight(x) => self.cursor_x += x as i64,
             Command::NormalInsert => {
-                self.debug("insert");
-                if let Some(at_cursor) =
-                    self.board
-                        .try_get_at_cursor(&self.viewport, self.cursor_x, self.cursor_y)
-                {
-                    self.debug(format!("Found: {}", at_cursor.id));
-                } else {
-                    self.board.create_textbox(self.cursor_x, self.cursor_y);
-                }
+                if let Some(hovered) = self
+                    .board
+                    .all_within_viewport(&self.viewport)
+                    .find(|&x| x.contains(self.cursor_x, self.cursor_y))
+                {}
             }
+            Command::NormalEnter => {}
             _ => {}
         }
+    }
+    pub fn update_status(&mut self) {
+        self.status.set_state(self.state);
+        self.status.set_max_width(self.viewport.w as u32);
+        self.status.set_coords(self.cursor_x, self.cursor_y);
+    }
+    pub fn resize(&mut self, nw: u32, nh: u32) {
+        self.viewport.w = nw as i64;
+        self.viewport.h = nh as i64;
+        self.status.set_max_width(nw);
     }
     pub fn draw<'a>(&'a self, mut frame: Frame<'a>) -> Frame<'a> {
         frame.draw((0, self.viewport.h - 1), &self.status);
@@ -94,7 +81,7 @@ impl Trellis {
         for contained in self.board.all_within_viewport(&self.viewport) {
             if let Some(coords) = self
                 .viewport
-                .translate_world_coords(contained.x, contained.y)
+                .translate_world_coords(contained.x(), contained.y())
             {
                 frame.draw(coords, contained);
             }
