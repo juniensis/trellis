@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use trellis_core::terminal::{Buffer, cell::Cell};
 
-use crate::primitives::{Region, bounds::Bounds};
+use crate::primitives::{Primitive, Region, bounds::Bounds};
 use trellis_core::primitives::Pos;
 
 #[derive(Debug, Clone)]
@@ -91,6 +91,9 @@ impl Scatter {
         }
 
         Bounds::new(x_min..=x_max, y_min..=y_max)
+    }
+    pub fn into_primitive(self) -> Primitive {
+        Primitive::Scatter(self)
     }
 }
 

@@ -45,6 +45,6 @@ fn main() {
         x += dx;
         y += dy;
 
-        while start.elapsed() < Duration::from_secs_f32(1.0 / 30.0) {}
+        while start.elapsed() < Duration::from_secs_f32(1.0 / 240.0) {}
     }
 }

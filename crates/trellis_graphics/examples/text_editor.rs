@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use trellis_core::terminal::style::{Color, Style};
 use trellis_graphics::{
-    primitives::{Primitive, Region, Renderable},
+    primitives::{Primitive, Renderable},
     shell::Shell,
 };
 use trellis_terminal::event::{Event, KeyCode};
@@ -93,7 +93,7 @@ pub struct StatusBar {
 }
 
 impl Renderable for StatusBar {
-    fn render(&self, ctx: trellis_graphics::primitives::RenderCtx) -> Primitive {
+    fn render(&self, _ctx: trellis_graphics::primitives::RenderCtx) -> Primitive {
         let mut status_bar = Primitive::new_region(2);
         status_bar.write_str_styled(
             (0, 0),

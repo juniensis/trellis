@@ -40,4 +40,15 @@ impl<'a> Frame<'a> {
         }
         viewport.flush();
     }
+    pub fn submit_with_hidden_cursor(mut self) {
+        let viewport = self.viewport;
+        viewport.backend.hide_cursor();
+        let mut buffer = self.buffer;
+        buffer.sort_by_key(|(_, x)| x.z_order());
+        for (pos, primitive) in buffer {
+            viewport.composite(pos, primitive);
+        }
+        viewport.flush();
+        viewport.backend.show_cursor();
+    }
 }

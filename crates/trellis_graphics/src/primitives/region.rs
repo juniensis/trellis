@@ -5,7 +5,7 @@ use trellis_core::{
     terminal::{buffer::Buffer, cell::Cell},
 };
 
-use crate::primitives::Scatter;
+use crate::primitives::{Primitive, Renderable, Scatter};
 
 /// A dynamically resizing rectangular cell region.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -82,7 +82,7 @@ impl Region {
                 if cl.is_null() {
                     continue;
                 }
-                dst.set_cell(idx as u32, y as u32, *cl);
+                dst.set_cell(pos.x as u32 + (idx as u32), y as u32, *cl);
             }
             y += 1;
         }
@@ -126,6 +126,9 @@ impl Region {
                 self.set_cell(p.x as u32, p.y as u32, c);
             }
         }
+    }
+    pub fn into_primitive(self) -> Primitive {
+        Primitive::Region(self)
     }
 }
 
