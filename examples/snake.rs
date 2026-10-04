@@ -3,12 +3,12 @@ use std::{
     time::{Duration, Instant},
 };
 
-use trellis_core::{primitives::Pos, terminal::Cell};
-use trellis_graphics::{
+use trellis::core::{primitives::Pos, terminal::Cell};
+use trellis::graphics::{
     primitives::{RenderCtx, Renderable, Scatter},
     shell::Shell,
 };
-use trellis_terminal::event::{Event, KeyCode};
+use trellis::terminal::event::{Event, KeyCode};
 
 struct SnakeState {
     x: i16,
@@ -100,7 +100,11 @@ impl Renderable for SnakeState {
 fn main() {
     let mut shell = Shell::new_crossterm();
     shell.hide_cursor();
-    let mut state = SnakeState::new((10, 10).into(), shell.width(), shell.height());
+    let mut state = SnakeState::new(
+        (shell.width() / 2, shell.height() / 2).into(),
+        shell.width(),
+        shell.height(),
+    );
 
     'running: while let Some(tick) = shell.tick() {
         let now = Instant::now();

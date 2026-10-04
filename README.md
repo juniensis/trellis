@@ -1,3 +1,3 @@
 # Trellis
 
-A chalkboard in your terminal.
+A simple terminal graphics library.

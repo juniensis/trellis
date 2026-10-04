@@ -1,14 +1,14 @@
 use std::time::Instant;
 
-use trellis_core::{
+use trellis::core::{
     terminal::{Cell, style::Color},
     utils::rand::{psuedo_random_u32, psuedo_random_u64},
 };
-use trellis_graphics::{
+use trellis::graphics::{
     primitives::{Region, Scatter},
     shell::Shell,
 };
-use trellis_terminal::event::{Event, KeyCode};
+use trellis::terminal::event::{Event, KeyCode};
 
 struct State {
     width: u32,
