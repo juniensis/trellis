@@ -1,13 +1,13 @@
 use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Event {
     Key { code: KeyCode, modifiers: Modifiers },
     Resized(usize, usize),
     Quit,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum KeyCode {
     Char(char),
     Enter,
@@ -20,7 +20,7 @@ pub enum KeyCode {
     Tab,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, PartialEq, Eq, Default, Hash)]
 #[repr(transparent)]
 pub struct Modifiers(u8);
 
