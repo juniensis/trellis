@@ -74,17 +74,24 @@ impl Region {
     #[inline]
     pub fn composite(&self, pos: impl Into<Pos>, dst: &mut Buffer) {
         let pos = pos.into();
-        let mut y = pos.y as usize;
-        let len = dst.width() as usize - pos.x as usize;
-        #[allow(clippy::explicit_counter_loop)]
-        for line in self.cells.iter() {
-            for (idx, cl) in line.iter().enumerate() {
-                if cl.is_null() {
+        let x_offset = if pos.x < 0 { pos.x.abs() } else { 0 };
+        let y_offset = if pos.y < 0 { pos.y.abs() } else { 0 };
+
+        for (ldx, line) in self.cells.iter().skip(y_offset as usize).enumerate() {
+            let y = pos.y.max(0) as usize + ldx;
+            if y as u32 >= dst.height() {
+                continue;
+            }
+            for (idx, cell) in line.iter().skip(x_offset as usize).enumerate() {
+                let x = pos.x.max(0) as usize + idx;
+                if x as u32 >= dst.width() {
                     continue;
                 }
-                dst.set_cell(pos.x as u32 + (idx as u32), y as u32, *cl);
+                if cell.is_null() {
+                    continue;
+                }
+                dst.set_cell(x as u32, y as u32, *cell);
             }
-            y += 1;
         }
     }
     #[inline]
@@ -171,6 +178,17 @@ mod tests {
 
         let mut buffer = Buffer::new(10, 10);
         region.composite((0, 0), &mut buffer);
+        println!("{buffer}");
+    }
+    #[test]
+    fn clipping_blit() {
+        let mut region = Region::new(0);
+        region.set_cell(0, 0, Cell::new('x'));
+        region.set_cell(1, 0, Cell::new('x'));
+        region.set_cell(2, 0, Cell::new('x'));
+
+        let mut buffer = Buffer::new(3, 3);
+        region.composite((-2, 0), &mut buffer);
         println!("{buffer}");
     }
 }

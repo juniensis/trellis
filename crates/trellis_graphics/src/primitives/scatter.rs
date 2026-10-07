@@ -43,6 +43,10 @@ impl Scatter {
         let offset = pos.into();
         for (p, cell) in self.iter() {
             let pos = p + offset;
+            if pos.x < 0 || pos.x >= dst.width() as i16 || pos.y < 0 || pos.y >= dst.height() as i16
+            {
+                continue;
+            }
             dst.set_cell(pos.x as u32, pos.y as u32, cell);
         }
     }
